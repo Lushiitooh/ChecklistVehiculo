@@ -8,19 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- ═══════════════════════════════════════════════════════════════
-         BASE DE DATOS — EDITABLE
-         Para actualizar masivamente: abra conversor.html, cargue su
-         Excel y pegue el bloque generado reemplazando desde aquí
-         hasta "FIN BASE DE DATOS".
+         BASE DE DATOS — DATOS POR DEFECTO
+         Estos datos se usan SOLO si nunca se ha cargado un Excel
+         con el conversor.html. Una vez que el conversor carga un
+         Excel, los datos quedan guardados en el navegador y estos
+         valores de respaldo ya no se utilizan.
          ═══════════════════════════════════════════════════════════════ -->
     <script id="datos-db">
-/* ── CONTRATOS ─────────────────────────────────────────────────────
-   Campos: codigo, nombre, version
-   ────────────────────────────────────────────────────────────────── */
-/* ── VEHÍCULOS ──────────────────────────────────────────────────────
-   Campos: patente, responsable
-   ────────────────────────────────────────────────────────────────── */
-const DB = {
+const DB_DEFAULT = {
     contratos: [
         {
             codigo:  "FTO-AL10184-26",
@@ -185,10 +180,8 @@ const DB = {
     <p class="text-sm mt-2 text-gray-300">Procesando checklist e imágenes...</p>
 </div>
 
-<!-- ══ ALERTA SIN DB ══ -->
-<div id="alert-no-db" class="hidden fixed top-0 inset-x-0 z-50 bg-red-600 text-white p-4 text-center text-sm font-semibold">
-    ⚠️ No se encontró la base de datos (datos.js). Asegúrese de que el archivo esté en la misma carpeta.
-</div>
+<!-- ══ BANNER ESTADO BD ══ -->
+<div id="banner-db" class="hidden sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center transition-all"></div>
 
 <!-- ══ HEADER ══ -->
 <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
@@ -585,22 +578,50 @@ FOTOS_FIJAS.forEach(f => { imgStore[f.id] = ''; });
 let contAdic = 0;
 
 /* ═══════════════════════════════════════════
+   BASE DE DATOS ACTIVA (se resuelve al inicio)
+   Prioridad: 1) localStorage  2) DB_DEFAULT
+   ═══════════════════════════════════════════ */
+let DB;
+const STORAGE_KEY = 'sice_checklist_db';
+
+function cargarDB() {
+    const banner = document.getElementById('banner-db');
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            DB = parsed;
+            // Mostrar banner verde con fecha de última actualización
+            const fecha = parsed.actualizadoEl
+                ? new Date(parsed.actualizadoEl).toLocaleDateString('es-CL', {
+                    day:'2-digit', month:'2-digit', year:'numeric',
+                    hour:'2-digit', minute:'2-digit' })
+                : '—';
+            banner.className = 'sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center bg-green-600 text-white';
+            banner.textContent = `✅ Base de datos cargada desde conversor  ·  Última actualización: ${fecha}`;
+            banner.classList.remove('hidden');
+            return;
+        }
+    } catch (e) { /* si falla, cae al default */ }
+
+    // Usar datos por defecto
+    DB = DB_DEFAULT;
+    banner.className = 'sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center bg-amber-500 text-white';
+    banner.textContent = '⚠️ Usando datos de ejemplo. Cargue su Excel con conversor.html para actualizar.';
+    banner.classList.remove('hidden');
+}
+
+/* ═══════════════════════════════════════════
    INICIALIZACIÓN
    ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-    verificarDB();
+    cargarDB();
     poblarContratos();
     poblarVehiculos();
     buildChecklist();
     inicializarFotosFijas();
     setTimeout(resizeCanvas, 150);
 });
-
-function verificarDB() {
-    if (typeof DB === 'undefined') {
-        document.getElementById('alert-no-db').classList.remove('hidden');
-    }
-}
 
 /* ═══════════════════════════════════════════
    POBLAR SELECTORES DESDE DB
