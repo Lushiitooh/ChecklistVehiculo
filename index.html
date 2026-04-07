@@ -214,10 +214,18 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium mb-1">N° Licencia Municipal <span class="text-red-500">*</span></label>
-                <input type="text" id="licencia-numero" required
-                    placeholder="Número o clase de licencia..."
+                <label class="block text-sm font-medium mb-1">Tipo de Licencia <span class="text-red-500">*</span></label>
+                <select id="licencia-numero" required
                     class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-600 bg-gray-50 text-sm">
+                    <option value="">Seleccione la clase de licencia...</option>
+                    <option value="Clase B">Clase B (Autos, camionetas)</option>
+                    <option value="Clase C">Clase C (Motos)</option>
+                    <option value="Clase A1">Clase A1 (Taxis)</option>
+                    <option value="Clase A2">Clase A2 (Taxis, ambulancias, transp. público hasta 17 asient.)</option>
+                    <option value="Clase A3">Clase A3 (Transporte público y escolar sin límite)</option>
+                    <option value="Clase A4">Clase A4 (Carga superior a 3.500 kg)</option>
+                    <option value="Clase A5">Clase A5 (Vehículos de carga articulados)</option>
+                </select>
                 <p class="text-xs text-gray-500 mt-1">La foto de la licencia se tomará en la sección de Evidencias.</p>
             </div>
 
@@ -296,16 +304,28 @@
 
     <!-- ══ 5. INSPECCIONADO POR + FIRMA ══ -->
     <section class="bg-white rounded-xl shadow border-t-4 border-blue-900 p-4">
-        <h2 class="text-base font-bold text-gray-700 border-b pb-2 mb-4">5. Inspector</h2>
-        <div class="space-y-4">
+        <div class="flex items-center gap-2 mb-2 border-b pb-3">
+            <input type="checkbox" id="check-is-inspector" onchange="toggleInspector()"
+                class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+            <label for="check-is-inspector" class="text-base font-bold text-gray-700 cursor-pointer select-none">
+                ¿La inspección la realiza un Inspector?
+            </label>
+        </div>
+
+        <div id="bloque-inspector" class="hidden space-y-4 mt-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+                <p class="text-xs text-blue-700 font-medium">
+                    Complete este recuadro solo si la persona que inspecciona es distinta al conductor.
+                </p>
+            </div>
             <div>
-                <label class="block text-sm font-medium mb-1">Inspeccionado por <span class="text-red-500">*</span></label>
-                <input type="text" id="inspector-nombre" required
+                <label class="block text-sm font-medium mb-1">Nombre del Inspector <span class="text-red-500">*</span></label>
+                <input type="text" id="inspector-nombre"
                     placeholder="Nombre completo del inspector..."
                     class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-600 bg-gray-50 text-sm">
             </div>
             <div>
-                <label class="block text-sm font-medium mb-2">Firma</label>
+                <label class="block text-sm font-medium mb-2">Firma del Inspector</label>
                 <canvas id="signature-pad" class="signature-pad"></canvas>
                 <div class="flex justify-between items-center mt-2">
                     <span class="text-xs text-gray-500">Firma dentro del recuadro</span>
@@ -923,7 +943,9 @@ function fechaInspeccion(date) {
     const dd   = String(date.getDate()).padStart(2,'0');
     const mm   = String(date.getMonth()+1).padStart(2,'0');
     const yyyy = date.getFullYear();
-    return `${dd} / ${mm} / ${yyyy}`;
+    const hh   = String(date.getHours()).padStart(2,'0');
+    const min  = String(date.getMinutes()).padStart(2,'0');
+    return `${dd} / ${mm} / ${yyyy} a las ${hh}:${min}`;
 }
 function fechaArchivo(date) {
     const dd   = String(date.getDate()).padStart(2,'0');
@@ -996,7 +1018,29 @@ function generarPDF() {
     if (!licencia)           { alert('Ingrese el N° de Licencia Municipal.'); return; }
     if (idxVehiculo === '')  { alert('Seleccione la Patente del Vehículo.'); return; }
     if (!km)                 { alert('Ingrese el Kilometraje del Vehículo.'); return; }
-    if (!inspector)          { alert('Ingrese el nombre del Inspector.'); return; }
+    const isInspectorChecked = document.getElementById('check-is-inspector').checked;
+    if (isInspectorChecked && !inspector) { 
+    alert('Ha marcado que hay un inspector. Ingrese el nombre del Inspector.'); 
+    return; 
+    }
+
+    // ── Validación de Fotos Fijas Obligatorias ──
+    for (const cfg of FOTOS_FIJAS) {
+        if (!imgStore[cfg.id]) {
+            alert('Falta la fotografía obligatoria: ' + cfg.label);
+            return; // Detiene la generación del PDF
+        }
+    }
+
+    // ── Validación de Fotos Adicionales ──
+    const bloquesAdicionales = document.querySelectorAll('[id^="bloque_adic_"]');
+    for (const bloque of bloquesAdicionales) {
+        const id = bloque.id.replace('bloque_', '');
+        if (!imgStore[id]) {
+            alert('Agregó un espacio para "Foto Adicional" pero no tomó la fotografía. Tómela o elimine el bloque adicional.');
+            return; // Detiene la generación del PDF
+        }
+    }
 
     document.getElementById('loader').style.display = 'flex';
 
@@ -1014,7 +1058,7 @@ function generarPDF() {
     document.getElementById('pdf-patente').innerText        = vehiculo.patente;
     document.getElementById('pdf-km').innerText             = Number(km).toLocaleString('es-CL') + ' km';
     document.getElementById('pdf-responsable').innerText    = vehiculo.responsable;
-    document.getElementById('pdf-inspector-nombre').innerText = inspector;
+    document.getElementById('pdf-inspector-nombre').innerText = isInspectorChecked ? inspector : 'Realizado por el Conductor';
 
     // ── Firma ──
     const firmaImg = document.getElementById('pdf-firma-img');
@@ -1078,7 +1122,21 @@ function generarPDF() {
         });
     }, 900);
 }
-
+//EN CASO QUE REQUIERA INSPECTOR
+function toggleInspector() {
+    const bloque = document.getElementById('bloque-inspector');
+    const isChecked = document.getElementById('check-is-inspector').checked;
+    
+    if (isChecked) {
+        bloque.classList.remove('hidden');
+        // Es vital redimensionar el canvas aquí porque al estar oculto tenía tamaño 0
+        setTimeout(resizeCanvas, 50); 
+    } else {
+        bloque.classList.add('hidden');
+        signaturePad.clear(); // Borra la firma si se desmarca
+        document.getElementById('inspector-nombre').value = ''; // Limpia el nombre
+    }
+}
 </script>
 </body>
 </html>
