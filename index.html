@@ -897,11 +897,22 @@ const signaturePad = new SignaturePad(canvas, {
     penColor: 'rgb(0,0,128)'
 });
 function resizeCanvas() {
+    // 1. Guardar la firma actual (si existe)
+    const data = signaturePad.toData();
+
+    // 2. Redimensionar el canvas
     const r = Math.max(window.devicePixelRatio || 1, 1);
     canvas.width  = canvas.offsetWidth  * r;
     canvas.height = canvas.offsetHeight * r;
     canvas.getContext('2d').scale(r, r);
+    
+    // 3. Limpiar el canvas (es necesario al redimensionar)
     signaturePad.clear();
+
+    // 4. Restaurar la firma guardada
+    if (data && data.length > 0) {
+        signaturePad.fromData(data);
+    }
 }
 window.addEventListener('resize', resizeCanvas);
 
