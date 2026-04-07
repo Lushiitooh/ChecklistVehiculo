@@ -3,144 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checklist de Vehículo - SICE</title>
+    <title>Inspección de Vehículos - SICE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- ═══════════════════════════════════════════════════════════════
+         BASE DE DATOS — EDITABLE
+         Para actualizar masivamente: abra conversor.html, cargue su
+         Excel y pegue el bloque generado reemplazando desde aquí
+         hasta "FIN BASE DE DATOS".
+         ═══════════════════════════════════════════════════════════════ -->
+    <script id="datos-db">
+/* ── CONTRATOS ─────────────────────────────────────────────────────
+   Campos: codigo, nombre, version
+   ────────────────────────────────────────────────────────────────── */
+/* ── VEHÍCULOS ──────────────────────────────────────────────────────
+   Campos: patente, responsable
+   ────────────────────────────────────────────────────────────────── */
+const DB = {
+    contratos: [
+        {
+            codigo:  "FTO-AL10184-26",
+            nombre:  "Suministro y Mantenimiento del Sistema de Comunicaciones para el Proyecto Línea 7 del Metro de Santiago",
+            version: "V1"
+        }
+    ],
+    vehiculos: [
+        { patente: "ABCD-12", responsable: "Juan Pérez González" },
+        { patente: "EFGH-34", responsable: "María Silva Rojas" },
+        { patente: "IJKL-56", responsable: "Carlos Muñoz Vera" }
+    ]
+};
+    </script>
+    <!-- ═══ FIN BASE DE DATOS ═══ -->
 
     <style>
-        body { font-family: 'Arial', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Arial', sans-serif; background-color: #f0f4f8; }
 
+        /* ── Firma ── */
         .signature-pad {
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            width: 100%;
-            height: 200px;
-            background-color: #ffffff;
-            touch-action: none;
-        }
-
-        /*
-         * ── PDF WRAPPER ──
-         * position:absolute + top negativo (NO left negativo).
-         * Con left:-9999px el navegador colapsa el ancho a 0.
-         * Con top:-9999px el ancho se mantiene real y html2canvas lo captura bien.
-         */
-        #pdf-wrapper {
-            position: absolute;
-            top: -99999px;
-            left: 0;
-            width: 681px;
-            z-index: -1;
-            pointer-events: none;
-            visibility: hidden;
-        }
-        #pdf-template {
-            background: white;
-            padding: 0;
-            color: #000;
-            width: 681px;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        /* ── Tablas PDF ── */
-        .pdf-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-        .pdf-table th,
-        .pdf-table td {
-            border: 1px solid #9ca3af;
-            padding: 7px 9px;
-            text-align: left;
-            vertical-align: top;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-        .pdf-table th {
-            background-color: #f3f4f6;
-            width: 36%;
-            font-weight: bold;
-        }
-
-        /* ── Título sección PDF ── */
-        .pdf-title {
-            font-size: 13px;
-            font-weight: bold;
-            background-color: #dbeafe;
-            color: #1e3a8a;
-            padding: 6px 10px;
-            text-align: center;
-            border: 1px solid #93c5fd;
-            margin-bottom: 10px;
-            text-transform: uppercase;
+            border: 1px solid #d1d5db; border-radius: .5rem;
+            width: 100%; height: 180px; background: #fff; touch-action: none;
         }
 
         /* ── Loader ── */
         #loader {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            flex-direction: column;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.85); z-index: 9999;
+            justify-content: center; align-items: center;
+            color: white; flex-direction: column;
         }
         .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 4px solid white;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            border: 4px solid rgba(255,255,255,.3); border-radius: 50%;
+            border-top: 4px solid white; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Foto card en formulario ── */
+        /* ── Checklist items ── */
+        .item-row { border-bottom: 1px solid #e5e7eb; }
+        .item-row:last-child { border-bottom: none; }
+
+        .btn-existe, .btn-estado {
+            min-width: 36px; height: 34px;
+            font-size: 11px; font-weight: 700;
+            border: 1.5px solid #d1d5db;
+            border-radius: 6px; cursor: pointer;
+            background: #f9fafb; color: #6b7280;
+            transition: all .15s; user-select: none;
+        }
+        .btn-existe:active, .btn-estado:active { transform: scale(.94); }
+
+        .btn-existe.sel-si  { background:#16a34a; color:#fff; border-color:#16a34a; }
+        .btn-existe.sel-no  { background:#dc2626; color:#fff; border-color:#dc2626; }
+        .btn-estado.sel-b   { background:#16a34a; color:#fff; border-color:#16a34a; }
+        .btn-estado.sel-r   { background:#d97706; color:#fff; border-color:#d97706; }
+        .btn-estado.sel-m   { background:#dc2626; color:#fff; border-color:#dc2626; }
+        .btn-estado.disabled-estado { opacity:.3; pointer-events: none; }
+
+        .obs-field {
+            width: 100%; font-size: 12px;
+            border: 1px solid #d1d5db; border-radius: 6px;
+            padding: 5px 8px; margin-top: 6px; background: #f9fafb;
+            display: none;
+        }
+        .obs-field.visible { display: block; }
+
+        /* ── Foto card ── */
         .foto-card {
-            border: 2px dashed #9ca3af;
-            border-radius: 0.5rem;
-            height: 9rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f9fafb;
-            overflow: hidden;
-            cursor: pointer;
-            position: relative;
-            transition: background-color 0.2s;
+            border: 2px dashed #9ca3af; border-radius: .5rem;
+            height: 9rem; display: flex; align-items: center;
+            justify-content: center; background: #f9fafb;
+            overflow: hidden; cursor: pointer; position: relative; transition: background .2s;
         }
-        .foto-card:hover { background-color: #f3f4f6; }
-        .foto-card.tiene-foto { border-color: #3b82f6; border-style: solid; }
-        .foto-card img {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 0.4rem;
+        .foto-card:hover { background: #f3f4f6; }
+        .foto-card.tiene-foto { border: 2px solid #3b82f6; }
+        .foto-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: .4rem; }
+
+        /* ══════════════════════════════════════
+           PDF TEMPLATE
+           ══════════════════════════════════════ */
+        #pdf-wrapper {
+            position: absolute; top: -99999px; left: 0;
+            width: 681px; z-index: -1; pointer-events: none; visibility: hidden;
         }
+        #pdf-template {
+            background: white; padding: 0; color: #000;
+            width: 681px; box-sizing: border-box; font-family: Arial, sans-serif;
+            font-size: 11px;
+        }
+
+        /* ── PDF: Tablas de datos ── */
+        .pdf-info-table {
+            width: 100%; border-collapse: collapse; margin-bottom: 0; font-size: 11px;
+        }
+        .pdf-info-table td, .pdf-info-table th {
+            border: 1px solid #6b7280; padding: 4px 6px;
+            vertical-align: middle; word-wrap: break-word;
+        }
+        .pdf-info-table .section-header {
+            background: #1e3a8a; color: white; font-weight: bold;
+            text-transform: uppercase; font-size: 10px; padding: 4px 6px;
+            text-align: left;
+        }
+        .pdf-info-table .field-label {
+            background: #f3f4f6; font-weight: bold;
+            width: 22%; white-space: nowrap;
+        }
+
+        /* ── PDF: Tabla checklist ── */
+        .pdf-checklist {
+            width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 6px;
+        }
+        .pdf-checklist th, .pdf-checklist td {
+            border: 1px solid #6b7280; padding: 3px 4px;
+            text-align: center; vertical-align: middle;
+        }
+        .pdf-checklist .col-item { text-align: left; padding-left: 6px; width: 42%; }
+        .pdf-checklist .col-check { width: 7%; text-align: center; }
+        .pdf-checklist .col-obs { width: 22%; text-align: left; padding-left: 4px; }
+        .pdf-checklist .cat-row td {
+            background: #1e3a8a; color: white; font-weight: bold;
+            text-align: left; padding: 3px 6px; font-size: 10px;
+            text-transform: uppercase;
+        }
+        .pdf-checklist .check-mark { font-size: 13px; line-height: 1; }
+
+        /* ── PDF: Página de foto ── */
+        .pdf-full-photo-page {
+            page-break-before: always; break-before: page;
+            padding-top: 12px; height: 980px; box-sizing: border-box;
+            display: flex; flex-direction: column;
+        }
+        .pdf-full-photo-page .photo-title {
+            font-size: 13px; font-weight: bold; text-align: center;
+            background: #dbeafe; color: #1e3a8a;
+            padding: 9px 10px; border: 1px solid #93c5fd;
+            margin-bottom: 10px; flex-shrink: 0; text-transform: uppercase;
+        }
+        .pdf-full-photo-page .photo-subtitle {
+            font-size: 11px; color: #374151; font-weight: normal; margin-top: 4px;
+        }
+        .pdf-full-photo-page .photo-container {
+            flex: 1; border: 1px solid #d1d5db; background: #f9fafb;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; min-height: 0;
+        }
+        .pdf-full-photo-page .photo-container img {
+            max-width: 100%; max-height: 100%; object-fit: contain; display: block;
+        }
+        .pdf-no-photo { color: #9ca3af; text-align: center; }
+        .pdf-no-photo div:first-child { font-size: 36px; margin-bottom: 8px; }
     </style>
 </head>
 <body class="text-gray-800 antialiased pb-20">
 
-<!-- ══════ LOADER ══════ -->
+<!-- ══ LOADER ══ -->
 <div id="loader">
     <div class="spinner"></div>
     <p class="font-bold text-xl">Generando PDF...</p>
-    <p class="text-sm mt-2 text-gray-300">Procesando imágenes, por favor espera.</p>
+    <p class="text-sm mt-2 text-gray-300">Procesando checklist e imágenes...</p>
 </div>
 
-<!-- ══════ HEADER ══════ -->
-<header class="bg-blue-800 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
+<!-- ══ ALERTA SIN DB ══ -->
+<div id="alert-no-db" class="hidden fixed top-0 inset-x-0 z-50 bg-red-600 text-white p-4 text-center text-sm font-semibold">
+    ⚠️ No se encontró la base de datos (datos.js). Asegúrese de que el archivo esté en la misma carpeta.
+</div>
+
+<!-- ══ HEADER ══ -->
+<header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
     <div>
-        <h1 class="text-xl font-bold">Checklist de Vehículo</h1>
-        <p class="text-xs text-blue-200">SICE Agencia Chile S.A.</p>
+        <h1 class="text-lg font-bold leading-tight">Inspección de Vehículos</h1>
+        <p class="text-xs text-blue-300">SICE Agencia Chile S.A.</p>
     </div>
     <svg class="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -148,65 +202,154 @@
     </svg>
 </header>
 
-<!-- ══════ FORMULARIO ══════ -->
-<main class="max-w-md mx-auto p-4 space-y-6">
-<form id="checklist-form" class="space-y-6">
+<main class="max-w-lg mx-auto p-4 space-y-5">
+<form id="inspeccion-form">
 
-    <!-- ── 1. CONDUCTOR Y VEHÍCULO ── -->
-    <section class="bg-white p-4 rounded-lg shadow border-t-4 border-blue-800">
-        <h2 class="text-lg font-bold border-b pb-2 mb-4 text-gray-700">1. Conductor y Vehículo</h2>
+    <!-- ══ 1. CONTRATO ══ -->
+    <section class="bg-white rounded-xl shadow border-t-4 border-blue-900 p-4">
+        <h2 class="text-base font-bold text-gray-700 border-b pb-2 mb-4">1. Contrato</h2>
+        <div>
+            <label class="block text-sm font-medium mb-1">Seleccione Contrato <span class="text-red-500">*</span></label>
+            <select id="sel-contrato" required onchange="onContratoChange()"
+                class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-600 bg-gray-50 text-sm">
+                <option value="">Seleccione un contrato...</option>
+            </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-3">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Código</label>
+                <input type="text" id="info-codigo" readonly
+                    class="w-full border border-gray-200 p-2 rounded bg-gray-100 text-sm text-gray-600 font-mono">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Versión</label>
+                <input type="text" id="info-version" readonly
+                    class="w-full border border-gray-200 p-2 rounded bg-gray-100 text-sm text-gray-600">
+            </div>
+        </div>
+    </section>
 
+    <!-- ══ 2. IDENTIFICACIÓN DEL CONDUCTOR ══ -->
+    <section class="bg-white rounded-xl shadow border-t-4 border-blue-900 p-4">
+        <h2 class="text-base font-bold text-gray-700 border-b pb-2 mb-4">2. Identificación del Conductor</h2>
         <div class="space-y-4">
 
             <div>
-                <label class="block text-sm font-medium mb-1">
-                    Nombre del Trabajador <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="nombre_trabajador" required
+                <label class="block text-sm font-medium mb-1">Nombre <span class="text-red-500">*</span></label>
+                <input type="text" id="nombre-conductor" required
                     placeholder="Nombre completo del conductor..."
-                    class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                    class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-600 bg-gray-50 text-sm">
             </div>
 
             <div>
-                <label class="block text-sm font-medium mb-1">
-                    Patente del Vehículo <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="patente_vehiculo" required
-                    placeholder="Ej: ABCD-12 o AB1234"
-                    maxlength="10"
-                    oninput="this.value = this.value.toUpperCase()"
-                    class="w-full border border-gray-300 p-3 rounded focus:ring-2 focus:ring-blue-500
-                           bg-gray-50 uppercase text-center font-bold text-xl tracking-widest">
+                <label class="block text-sm font-medium mb-1">N° Licencia Municipal <span class="text-red-500">*</span></label>
+                <input type="text" id="licencia-numero" required
+                    placeholder="Número o clase de licencia..."
+                    class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-600 bg-gray-50 text-sm">
+                <p class="text-xs text-gray-500 mt-1">La foto de la licencia se tomará en la sección de Evidencias.</p>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium mb-1">
-                    Destino / Motivo de Viaje <span class="text-red-500">*</span>
-                </label>
-                <textarea id="destino_viaje" rows="3" required
-                    placeholder="Indique el destino o motivo del viaje..."
-                    class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 bg-gray-50"></textarea>
-            </div>
-
-            <!-- Aviso timestamp automático -->
+            <!-- Fecha automática -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
                 <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <p class="text-xs text-blue-700 font-medium">
-                    La <strong>fecha y hora exacta</strong> se registrarán automáticamente al momento de generar el PDF.
+                    La <strong>fecha de inspección</strong> se registrará automáticamente al generar el PDF.
                 </p>
             </div>
 
         </div>
     </section>
 
-    <!-- ── 2. EVIDENCIA FOTOGRÁFICA ── -->
-    <section class="bg-white p-4 rounded-lg shadow border-t-4 border-blue-800">
-        <h2 class="text-lg font-bold border-b pb-2 mb-3 text-gray-700">2. Evidencia Fotográfica</h2>
+    <!-- ══ 3. IDENTIFICACIÓN DEL VEHÍCULO ══ -->
+    <section class="bg-white rounded-xl shadow border-t-4 border-blue-900 p-4">
+        <h2 class="text-base font-bold text-gray-700 border-b pb-2 mb-4">3. Identificación del Vehículo</h2>
+        <div class="space-y-4">
 
-        <!-- Aviso cámara -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Patente <span class="text-red-500">*</span></label>
+                <select id="sel-vehiculo" required onchange="onVehiculoChange()"
+                    class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-600 bg-gray-50 text-sm uppercase font-bold tracking-wider">
+                    <option value="">Seleccione patente...</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Vehículo a cargo de</label>
+                <input type="text" id="info-responsable" readonly placeholder="Se completa al seleccionar patente"
+                    class="w-full border border-gray-200 p-2 rounded bg-gray-100 text-sm text-gray-600">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Kilometraje <span class="text-red-500">*</span></label>
+                <input type="number" id="km-vehiculo" required min="0"
+                    placeholder="Ej: 125430"
+                    class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-600 bg-gray-50 text-sm">
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ══ 4. CHECKLIST ══ -->
+    <section class="bg-white rounded-xl shadow border-t-4 border-blue-900 p-4">
+        <h2 class="text-base font-bold text-gray-700 border-b pb-2 mb-1">4. Estado del Vehículo</h2>
+
+        <!-- Leyenda -->
+        <div class="flex flex-wrap gap-3 text-xs mb-4 mt-3 text-gray-600">
+            <span class="flex items-center gap-1">
+                <span class="inline-block w-5 h-5 rounded bg-green-600 text-white text-center font-bold text-xs leading-5">SI</span> Existe
+            </span>
+            <span class="flex items-center gap-1">
+                <span class="inline-block w-5 h-5 rounded bg-red-600 text-white text-center font-bold text-xs leading-5">NO</span> No existe
+            </span>
+            <span class="flex items-center gap-1">
+                <span class="inline-block w-5 h-5 rounded bg-green-600 text-white text-center font-bold text-xs leading-5">B</span> Bueno
+            </span>
+            <span class="flex items-center gap-1">
+                <span class="inline-block w-5 h-5 rounded bg-amber-500 text-white text-center font-bold text-xs leading-5">R</span> Regular
+            </span>
+            <span class="flex items-center gap-1">
+                <span class="inline-block w-5 h-5 rounded bg-red-600 text-white text-center font-bold text-xs leading-5">M</span> Malo
+            </span>
+            <span class="flex items-center gap-1">
+                <span class="inline-block w-5 h-5 rounded bg-gray-200 text-gray-600 text-center font-bold text-xs leading-5">✏️</span> Observación
+            </span>
+        </div>
+
+        <!-- Items generados dinámicamente -->
+        <div id="checklist-container" class="space-y-4"></div>
+    </section>
+
+    <!-- ══ 5. INSPECCIONADO POR + FIRMA ══ -->
+    <section class="bg-white rounded-xl shadow border-t-4 border-blue-900 p-4">
+        <h2 class="text-base font-bold text-gray-700 border-b pb-2 mb-4">5. Inspector</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Inspeccionado por <span class="text-red-500">*</span></label>
+                <input type="text" id="inspector-nombre" required
+                    placeholder="Nombre completo del inspector..."
+                    class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-600 bg-gray-50 text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Firma</label>
+                <canvas id="signature-pad" class="signature-pad"></canvas>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-xs text-gray-500">Firma dentro del recuadro</span>
+                    <button type="button" onclick="signaturePad.clear()"
+                        class="text-xs bg-gray-200 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-300 font-semibold">
+                        Limpiar Firma
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ 6. EVIDENCIAS FOTOGRÁFICAS ══ -->
+    <section class="bg-white rounded-xl shadow border-t-4 border-blue-900 p-4">
+        <h2 class="text-base font-bold text-gray-700 border-b pb-2 mb-3">6. Evidencias Fotográficas</h2>
+
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 mb-5">
             <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -224,10 +367,10 @@
         <!-- Fotos adicionales -->
         <div id="fotos-adicionales-container" class="space-y-4 mt-4"></div>
 
-        <!-- Botón agregar foto adicional -->
+        <!-- Botón agregar -->
         <button type="button" onclick="agregarFotoAdicional()"
             class="mt-5 w-full border-2 border-dashed border-blue-400 text-blue-600 font-semibold
-                   py-3 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition flex items-center justify-center gap-2">
+                   py-3 rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-2 text-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -235,23 +378,10 @@
         </button>
     </section>
 
-    <!-- ── 3. FIRMA DEL CONDUCTOR ── -->
-    <section class="bg-white p-4 rounded-lg shadow border-t-4 border-blue-800">
-        <h2 class="text-lg font-bold border-b pb-2 mb-4 text-gray-700">3. Firma del Conductor</h2>
-        <canvas id="signature-pad" class="signature-pad"></canvas>
-        <div class="flex justify-between items-center mt-3">
-            <span class="text-xs text-gray-500">Firma dentro del recuadro</span>
-            <button type="button" onclick="signaturePad.clear()"
-                class="text-sm bg-gray-200 text-gray-700 px-4 py-2 rounded shadow hover:bg-gray-300 font-semibold">
-                Limpiar Firma
-            </button>
-        </div>
-    </section>
-
-    <!-- ── BOTÓN GENERAR PDF ── -->
+    <!-- ══ BOTÓN GENERAR PDF ══ -->
     <button type="button" onclick="generarPDF()"
-        class="w-full bg-blue-700 text-white font-bold text-lg py-4 rounded-lg shadow-lg
-               hover:bg-blue-800 active:bg-blue-900 transition mt-4 mb-8 flex justify-center items-center gap-3">
+        class="w-full bg-blue-900 text-white font-bold text-lg py-4 rounded-xl shadow-lg
+               hover:bg-blue-800 active:bg-blue-950 transition flex justify-center items-center gap-3 mt-2 mb-8">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -263,101 +393,384 @@
 </main>
 
 
-<!-- ══════════════════════════════════════════════════
-     PLANTILLA OCULTA PARA GENERACIÓN DEL PDF
-     ══════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════
+     PLANTILLA OCULTA PARA EL PDF
+     ══════════════════════════════════════════════════════ -->
 <div id="pdf-wrapper">
-  <div id="pdf-template">
-    <div style="padding: 0 2mm;">
+<div id="pdf-template">
+<div style="padding: 0 3mm;">
 
-        <!-- ── ENCABEZADO ── -->
-        <div style="display:flex; justify-content:space-between; align-items:center;
-                    border-bottom:2px solid #1e3a8a; padding-bottom:14px; margin-bottom:20px;">
-            <img src="logo-sice.png" alt="SICE" crossorigin="anonymous"
-                style="height:42px; width:130px; object-fit:contain;">
-            <div style="text-align:center; flex-grow:1; padding:0 14px;">
-                <div style="font-size:14px; font-weight:bold; color:#1e3a8a; text-transform:uppercase;">
-                    SICE Agencia Chile S.A.
+    <!-- ── ENCABEZADO DEL DOCUMENTO ── -->
+    <table style="width:100%; border-collapse:collapse; border:1px solid #6b7280; margin-bottom:4px;">
+        <tr>
+            <td style="width:22%; border-right:1px solid #6b7280; padding:6px; vertical-align:middle; text-align:center;">
+                <img src="logo-sice.png" alt="SICE" crossorigin="anonymous"
+                    style="height:38px; max-width:110px; object-fit:contain;">
+            </td>
+            <td style="text-align:center; padding:6px; vertical-align:middle;">
+                <div style="font-size:13px; font-weight:bold; color:#1e3a8a; text-transform:uppercase;">
+                    Inspección de Vehículos
                 </div>
-                <div style="font-size:13px; color:#374151; margin-top:3px; font-weight:bold; text-transform:uppercase;">
-                    Checklist de Vehículo
-                </div>
-            </div>
-            <div style="height:42px; width:130px;"></div>
-        </div>
+            </td>
+            <td style="width:26%; border-left:1px solid #6b7280; padding:5px 8px; vertical-align:middle; font-size:10px;">
+                <div><strong>Código:</strong> <span id="pdf-codigo"></span></div>
+                <div style="margin-top:3px;"><strong>Versión:</strong> <span id="pdf-version"></span></div>
+            </td>
+        </tr>
+    </table>
 
-        <!-- ── DATOS PRINCIPALES ── -->
-        <div style="margin-bottom: 18px;">
-            <div class="pdf-title">DATOS DEL REGISTRO</div>
-            <table class="pdf-table">
-                <tbody>
-                    <tr>
-                        <th>Fecha y Hora de Registro</th>
-                        <td id="pdf-fecha-hora"
-                            style="font-weight:bold; color:#1e3a8a; font-size:13px;"></td>
-                    </tr>
-                    <tr>
-                        <th>Nombre del Trabajador</th>
-                        <td id="pdf-trabajador"></td>
-                    </tr>
-                    <tr>
-                        <th>Patente del Vehículo</th>
-                        <td id="pdf-patente"
-                            style="font-weight:bold; font-size:16px; letter-spacing:3px; text-align:center;"></td>
-                    </tr>
-                    <tr>
-                        <th>Destino / Motivo de Viaje</th>
-                        <td id="pdf-destino" style="white-space:pre-wrap;"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <!-- ── CONTRATO ── -->
+    <table class="pdf-info-table" style="margin-bottom:4px;">
+        <tr>
+            <td class="field-label" style="width:15%;">CONTRATO</td>
+            <td id="pdf-contrato" colspan="3"
+                style="font-weight:bold; font-size:10.5px;"></td>
+        </tr>
+    </table>
 
-        <!-- ── FIRMA DEL CONDUCTOR ── -->
-        <div style="margin-top:28px; text-align:center; page-break-inside:avoid;">
-            <div style="width:280px; margin:0 auto; border-bottom:1px solid #000;
-                        height:110px; display:flex; align-items:flex-end;
-                        justify-content:center; padding-bottom:6px;">
-                <img id="pdf-firma-img" src="" style="max-height:100px; display:none;">
-            </div>
-            <p id="pdf-firma-nombre"
-               style="margin-top:8px; font-weight:bold; font-size:13px; text-transform:uppercase;"></p>
-            <p style="font-size:11px; color:#4b5563; margin-top:2px;">CONDUCTOR / TRABAJADOR</p>
-        </div>
+    <!-- ── IDENTIFICACIÓN DEL CONDUCTOR ── -->
+    <table class="pdf-info-table" style="margin-bottom:4px;">
+        <tr>
+            <td class="section-header" colspan="4">IDENTIFICACIÓN DEL CONDUCTOR</td>
+        </tr>
+        <tr>
+            <td class="field-label">NOMBRE</td>
+            <td id="pdf-nombre-conductor" colspan="3"></td>
+        </tr>
+        <tr>
+            <td class="field-label" style="white-space:nowrap;">LICENCIA MUNICIPAL</td>
+            <td id="pdf-licencia" style="width:28%;"></td>
+            <td class="field-label" style="white-space:nowrap; width:20%;">FECHA INSPECCIÓN</td>
+            <td id="pdf-fecha-inspeccion" style="width:20%; font-weight:bold; color:#1e3a8a;"></td>
+        </tr>
+    </table>
 
-        <!-- ── PÁGINAS DE FOTOS (se inyectan dinámicamente) ── -->
-        <div id="pdf-fotos-container"></div>
+    <!-- ── IDENTIFICACIÓN DEL VEHÍCULO ── -->
+    <table class="pdf-info-table" style="margin-bottom:6px;">
+        <tr>
+            <td class="section-header" colspan="4">IDENTIFICACIÓN DEL VEHÍCULO</td>
+        </tr>
+        <tr>
+            <td class="field-label">PATENTE</td>
+            <td id="pdf-patente"
+                style="width:28%; font-weight:bold; font-size:13px; letter-spacing:2px; text-align:center;"></td>
+            <td class="field-label" style="width:15%;">Km</td>
+            <td id="pdf-km" style="width:25%;"></td>
+        </tr>
+        <tr>
+            <td class="field-label" style="white-space:nowrap;">A CARGO DE</td>
+            <td id="pdf-responsable" colspan="3"></td>
+        </tr>
+    </table>
 
-    </div>
-  </div>
+    <!-- ── TABLA CHECKLIST ── -->
+    <table class="pdf-checklist">
+        <thead>
+            <tr>
+                <th class="col-item" rowspan="2" style="background:#f3f4f6;">ITEM</th>
+                <th colspan="2" style="background:#f3f4f6;">EXISTE</th>
+                <th colspan="3" style="background:#f3f4f6;">ESTADO</th>
+                <th class="col-obs" rowspan="2" style="background:#f3f4f6;">OBSERVACIONES</th>
+            </tr>
+            <tr>
+                <th class="col-check" style="background:#f3f4f6; font-size:10px;">SI</th>
+                <th class="col-check" style="background:#f3f4f6; font-size:10px;">NO</th>
+                <th class="col-check" style="background:#f3f4f6; font-size:10px;">B</th>
+                <th class="col-check" style="background:#f3f4f6; font-size:10px;">R</th>
+                <th class="col-check" style="background:#f3f4f6; font-size:10px;">M</th>
+            </tr>
+        </thead>
+        <tbody id="pdf-checklist-tbody">
+            <!-- Generado dinámicamente en generarPDF() -->
+        </tbody>
+    </table>
+
+    <!-- ── INSPECTOR Y FIRMA ── -->
+    <table class="pdf-info-table" style="margin-top:8px; page-break-inside:avoid;">
+        <tr>
+            <td class="field-label" style="width:22%; white-space:nowrap;">INSPECCIONADO POR</td>
+            <td id="pdf-inspector-nombre" style="width:40%;"></td>
+            <td class="field-label" style="width:10%; white-space:nowrap;">FIRMA</td>
+            <td style="width:28%; height:60px; text-align:center; vertical-align:middle;">
+                <img id="pdf-firma-img" src="" style="max-height:55px; max-width:100%; display:none;">
+            </td>
+        </tr>
+    </table>
+
+    <!-- ── PÁGINAS DE FOTOS (generadas dinámicamente) ── -->
+    <div id="pdf-fotos-container"></div>
+
+</div>
+</div>
 </div>
 
 
-<!-- ══════════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════════════
      JAVASCRIPT
-     ══════════════════════════════════════════════════ -->
+     ══════════════════════════════════════════════════════ -->
 <script>
 
 /* ═══════════════════════════════════════════
-   CONFIGURACIÓN: FOTOS FIJAS
+   CHECKLIST: DEFINICIÓN DE CATEGORÍAS E ÍTEMS
    ═══════════════════════════════════════════ */
-const FOTOS_FIJAS = [
-    { id: 'patente',     label: 'Foto de Patente',          pdfLabel: 'PATENTE DEL VEHÍCULO' },
-    { id: 'frente',      label: 'Vista Frontal',            pdfLabel: 'VISTA FRONTAL DEL VEHÍCULO' },
-    { id: 'trasera',     label: 'Vista Trasera',            pdfLabel: 'VISTA TRASERA DEL VEHÍCULO' },
-    { id: 'lat_izq',     label: 'Lateral Izquierdo',        pdfLabel: 'LATERAL IZQUIERDO DEL VEHÍCULO' },
-    { id: 'lat_der',     label: 'Lateral Derecho',          pdfLabel: 'LATERAL DERECHO DEL VEHÍCULO' },
-    { id: 'kilometraje', label: 'Kilometraje',              pdfLabel: 'KILOMETRAJE DEL VEHÍCULO' },
+const CHECKLIST = [
+    {
+        id: 'luces',
+        categoria: 'SISTEMA DE LUCES',
+        items: [
+            'Estacionamiento', 'Bajas', 'Altas',
+            'Freno (incluye tercera luz)',
+            'Marcha Atrás', 'Viraje Derecha', 'Viraje Izquierda',
+            'Luz Emergencia', 'Patente', 'Pértiga', 'Baliza'
+        ]
+    },
+    {
+        id: 'frenos',
+        categoria: 'SISTEMA DE FRENOS',
+        items: ['De Mano', 'Pedal', 'Otros']
+    },
+    {
+        id: 'neumaticos',
+        categoria: 'NEUMÁTICOS',
+        items: [
+            'Delantero Derecho', 'Delantero Izquierdo',
+            'Trasero Derecho', 'Trasero Izquierdo',
+            'Repuesto', 'Otros'
+        ]
+    },
+    {
+        id: 'motor',
+        categoria: 'NIVELES / MOTOR',
+        items: ['Aceite Motor', 'Agua Radiador']
+    },
+    {
+        id: 'accesorios',
+        categoria: 'ACCESORIOS Y DOCUMENTOS',
+        items: [
+            'Extintor', 'Botiquín', 'Gata', 'Llave de Ruedas',
+            'Triángulos', 'Limpia Parabrisas', 'Herramientas',
+            'Cinturón de Seguridad', 'Espejos Laterales',
+            'Espejo Interior', 'Permiso de Circulación',
+            'Revisión Técnica', 'Seguro Obligatorio'
+        ]
+    },
+    {
+        id: 'estado',
+        categoria: 'ESTADO GENERAL',
+        items: [
+            'Techo', 'Capot', 'Puertas', 'Vidrios',
+            'Tapabarros', 'Pick-Up', 'Parachoques',
+            'Tubo de Escape', 'Limpieza'
+        ]
+    }
 ];
 
-// Almacén de imágenes en base64
-const imagenesCargadas = {};
-FOTOS_FIJAS.forEach(f => { imagenesCargadas[f.id] = ''; });
-
-let contadorAdicional = 0;
+/* Estado del checklist: { catId_itemIdx: { existe, estado, obs } } */
+const chkState = {};
 
 /* ═══════════════════════════════════════════
-   INICIALIZAR FOTOS FIJAS EN EL FORMULARIO
+   FOTOS
+   ═══════════════════════════════════════════ */
+const FOTOS_FIJAS = [
+    { id: 'licencia',    label: 'Foto Licencia Municipal',    pdfLabel: 'LICENCIA MUNICIPAL' },
+    { id: 'patente',     label: 'Foto Patente del Vehículo',  pdfLabel: 'PATENTE DEL VEHÍCULO' },
+    { id: 'frente',      label: 'Vista Frontal',              pdfLabel: 'VISTA FRONTAL DEL VEHÍCULO' },
+    { id: 'trasera',     label: 'Vista Trasera',              pdfLabel: 'VISTA TRASERA DEL VEHÍCULO' },
+    { id: 'lat_izq',     label: 'Lateral Izquierdo',          pdfLabel: 'LATERAL IZQUIERDO DEL VEHÍCULO' },
+    { id: 'lat_der',     label: 'Lateral Derecho',            pdfLabel: 'LATERAL DERECHO DEL VEHÍCULO' },
+    { id: 'kilometraje', label: 'Foto Kilometraje',           pdfLabel: 'KILOMETRAJE DEL VEHÍCULO' },
+];
+const imgStore = {};
+FOTOS_FIJAS.forEach(f => { imgStore[f.id] = ''; });
+let contAdic = 0;
+
+/* ═══════════════════════════════════════════
+   INICIALIZACIÓN
+   ═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+    verificarDB();
+    poblarContratos();
+    poblarVehiculos();
+    buildChecklist();
+    inicializarFotosFijas();
+    setTimeout(resizeCanvas, 150);
+});
+
+function verificarDB() {
+    if (typeof DB === 'undefined') {
+        document.getElementById('alert-no-db').classList.remove('hidden');
+    }
+}
+
+/* ═══════════════════════════════════════════
+   POBLAR SELECTORES DESDE DB
+   ═══════════════════════════════════════════ */
+function poblarContratos() {
+    if (typeof DB === 'undefined') return;
+    const sel = document.getElementById('sel-contrato');
+    DB.contratos.forEach((c, i) => {
+        const opt = new Option(c.nombre, i);
+        sel.appendChild(opt);
+    });
+}
+
+function poblarVehiculos() {
+    if (typeof DB === 'undefined') return;
+    const sel = document.getElementById('sel-vehiculo');
+    DB.vehiculos.forEach((v, i) => {
+        const opt = new Option(v.patente, i);
+        sel.appendChild(opt);
+    });
+}
+
+function onContratoChange() {
+    const idx = document.getElementById('sel-contrato').value;
+    if (idx === '' || typeof DB === 'undefined') {
+        document.getElementById('info-codigo').value  = '';
+        document.getElementById('info-version').value = '';
+        return;
+    }
+    const c = DB.contratos[idx];
+    document.getElementById('info-codigo').value  = c.codigo;
+    document.getElementById('info-version').value = c.version;
+}
+
+function onVehiculoChange() {
+    const idx = document.getElementById('sel-vehiculo').value;
+    if (idx === '' || typeof DB === 'undefined') {
+        document.getElementById('info-responsable').value = '';
+        return;
+    }
+    document.getElementById('info-responsable').value = DB.vehiculos[idx].responsable;
+}
+
+/* ═══════════════════════════════════════════
+   CONSTRUIR CHECKLIST EN EL FORMULARIO
+   ═══════════════════════════════════════════ */
+function buildChecklist() {
+    const cont = document.getElementById('checklist-container');
+    CHECKLIST.forEach(section => {
+        const secDiv = document.createElement('div');
+        secDiv.className = 'rounded-lg overflow-hidden border border-gray-200';
+
+        // Encabezado de categoría
+        secDiv.innerHTML = `
+            <div class="bg-blue-900 text-white text-xs font-bold uppercase px-3 py-2 tracking-wide">
+                ${section.categoria}
+            </div>
+            <div class="divide-y divide-gray-100" id="items-${section.id}"></div>
+        `;
+        cont.appendChild(secDiv);
+
+        const itemsCont = secDiv.querySelector('#items-' + section.id);
+        section.items.forEach((item, idx) => {
+            const key = `${section.id}_${idx}`;
+            chkState[key] = { existe: null, estado: null, obs: '' };
+            itemsCont.appendChild(buildItemRow(key, item));
+        });
+    });
+}
+
+function buildItemRow(key, label) {
+    const div = document.createElement('div');
+    div.className = 'item-row px-3 py-2';
+    div.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+            <!-- Nombre ítem -->
+            <span class="text-xs text-gray-800 flex-1 leading-tight">${label}</span>
+
+            <!-- Controles -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+                <!-- EXISTE -->
+                <button type="button" class="btn-existe" data-key="${key}" data-val="SI"
+                    onclick="setExiste('${key}','SI')">SI</button>
+                <button type="button" class="btn-existe" data-key="${key}" data-val="NO"
+                    onclick="setExiste('${key}','NO')">NO</button>
+
+                <div class="w-px h-5 bg-gray-300 mx-0.5"></div>
+
+                <!-- ESTADO -->
+                <button type="button" class="btn-estado" id="btnB_${key}" data-key="${key}"
+                    onclick="setEstado('${key}','B')">B</button>
+                <button type="button" class="btn-estado" id="btnR_${key}" data-key="${key}"
+                    onclick="setEstado('${key}','R')">R</button>
+                <button type="button" class="btn-estado" id="btnM_${key}" data-key="${key}"
+                    onclick="setEstado('${key}','M')">M</button>
+
+                <div class="w-px h-5 bg-gray-300 mx-0.5"></div>
+
+                <!-- Observación -->
+                <button type="button"
+                    class="btn-estado text-gray-500"
+                    style="font-size:13px; min-width:30px;"
+                    onclick="toggleObs('${key}')"
+                    title="Agregar observación">✏️</button>
+            </div>
+        </div>
+        <!-- Observación expandible -->
+        <input type="text" id="obs_${key}" class="obs-field"
+            placeholder="Observación..."
+            oninput="chkState['${key}'].obs = this.value">
+    `;
+    // Deshabilitar ESTADO inicialmente
+    setTimeout(() => updateEstadoBtns(key), 0);
+    return div;
+}
+
+/* ═══════════════════════════════════════════
+   LÓGICA CHECKLIST
+   ═══════════════════════════════════════════ */
+function setExiste(key, val) {
+    chkState[key].existe = val;
+
+    // Limpiar EXISTE buttons
+    document.querySelectorAll(`.btn-existe[data-key="${key}"]`).forEach(btn => {
+        btn.classList.remove('sel-si', 'sel-no');
+        if (btn.dataset.val === val) {
+            btn.classList.add(val === 'SI' ? 'sel-si' : 'sel-no');
+        }
+    });
+
+    // Si NO → limpiar estado
+    if (val === 'NO') {
+        chkState[key].estado = null;
+        ['B','R','M'].forEach(e => {
+            const btn = document.getElementById(`btn${e}_${key}`);
+            if (btn) btn.classList.remove('sel-b','sel-r','sel-m');
+        });
+    }
+    updateEstadoBtns(key);
+}
+
+function setEstado(key, val) {
+    if (chkState[key].existe !== 'SI') return;
+    chkState[key].estado = val;
+
+    ['B','R','M'].forEach(e => {
+        const btn = document.getElementById(`btn${e}_${key}`);
+        if (!btn) return;
+        btn.classList.remove('sel-b','sel-r','sel-m');
+        if (e === val) btn.classList.add('sel-' + val.toLowerCase());
+    });
+}
+
+function updateEstadoBtns(key) {
+    const disabled = chkState[key].existe !== 'SI';
+    ['B','R','M'].forEach(e => {
+        const btn = document.getElementById(`btn${e}_${key}`);
+        if (!btn) return;
+        btn.classList.toggle('disabled-estado', disabled);
+    });
+}
+
+function toggleObs(key) {
+    const obs = document.getElementById('obs_' + key);
+    obs.classList.toggle('visible');
+    if (obs.classList.contains('visible')) obs.focus();
+}
+
+/* ═══════════════════════════════════════════
+   INICIALIZAR FOTOS FIJAS
    ═══════════════════════════════════════════ */
 function inicializarFotosFijas() {
     const cont = document.getElementById('fotos-fijas-container');
@@ -366,12 +779,11 @@ function inicializarFotosFijas() {
         div.innerHTML = `
             <label class="block text-sm font-semibold mb-2 text-gray-700">${cfg.label}</label>
             <input type="file" id="input_${cfg.id}" accept="image/*" capture="environment"
-                class="hidden" onchange="previewFotoFija(event,'${cfg.id}')">
+                class="hidden" onchange="previewFija(event,'${cfg.id}')">
             <div id="card_${cfg.id}" class="foto-card"
                 onclick="document.getElementById('input_${cfg.id}').click()">
-                <span id="placeholder_${cfg.id}"
-                    class="flex flex-col items-center gap-1 text-gray-500 select-none">
-                    <svg class="w-9 h-9 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span id="ph_${cfg.id}" class="flex flex-col items-center gap-1 text-gray-400 select-none">
+                    <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86
                                a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2
@@ -388,22 +800,19 @@ function inicializarFotosFijas() {
     });
 }
 
-/* ═══════════════════════════════════════════
-   PREVIEW FOTO FIJA
-   ═══════════════════════════════════════════ */
-function previewFotoFija(event, key) {
+function previewFija(event, key) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = e => {
-        const img         = document.getElementById('preview_' + key);
-        const placeholder = document.getElementById('placeholder_' + key);
-        const card        = document.getElementById('card_' + key);
+        const img = document.getElementById('preview_' + key);
+        const ph  = document.getElementById('ph_' + key);
+        const card = document.getElementById('card_' + key);
         img.src = e.target.result;
         img.classList.remove('hidden');
-        placeholder.classList.add('hidden');
+        ph.classList.add('hidden');
         card.classList.add('tiene-foto');
-        imagenesCargadas[key] = e.target.result;
+        imgStore[key] = e.target.result;
     };
     reader.readAsDataURL(file);
 }
@@ -412,9 +821,9 @@ function previewFotoFija(event, key) {
    FOTOS ADICIONALES
    ═══════════════════════════════════════════ */
 function agregarFotoAdicional() {
-    contadorAdicional++;
-    const id = 'adic_' + contadorAdicional;
-    imagenesCargadas[id] = '';
+    contAdic++;
+    const id = 'adic_' + contAdic;
+    imgStore[id] = '';
 
     const cont = document.getElementById('fotos-adicionales-container');
     const div  = document.createElement('div');
@@ -422,39 +831,25 @@ function agregarFotoAdicional() {
     div.className = 'bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3';
     div.innerHTML = `
         <div class="flex justify-between items-center">
-            <span class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86
-                           a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2
-                           2H5a2 2 0 01-2-2V9z"/>
-                </svg>
-                Foto Adicional #${contadorAdicional}
-            </span>
-            <button type="button" onclick="eliminarFotoAdicional('${id}')"
-                class="text-red-500 hover:text-red-700 text-xs font-semibold flex items-center gap-1 transition">
+            <span class="text-sm font-semibold text-gray-700">Foto Adicional #${contAdic}</span>
+            <button type="button" onclick="eliminarAdicional('${id}')"
+                class="text-red-500 text-xs font-semibold flex items-center gap-1 hover:text-red-700">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-                Eliminar
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg> Eliminar
             </button>
         </div>
         <div>
-            <label class="block text-xs font-medium mb-1 text-gray-600">
-                Descripción / Motivo de la foto
-            </label>
-            <input type="text" id="desc_${id}"
-                placeholder="Ej: Daño en parabrisas, estado neumático, etc."
+            <label class="block text-xs font-medium mb-1 text-gray-600">Descripción de la foto</label>
+            <input type="text" id="desc_${id}" placeholder="Ej: Daño en parabrisas, estado neumático..."
                 class="w-full border border-gray-300 p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 bg-white">
         </div>
         <input type="file" id="input_${id}" accept="image/*" capture="environment"
-            class="hidden" onchange="previewFotoAdicional(event,'${id}')">
+            class="hidden" onchange="previewAdic(event,'${id}')">
         <div id="card_${id}" class="foto-card border-blue-300"
             onclick="document.getElementById('input_${id}').click()">
-            <span id="placeholder_${id}"
-                class="flex flex-col items-center gap-1 text-gray-500 select-none">
-                <svg class="w-9 h-9 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span id="ph_${id}" class="flex flex-col items-center gap-1 text-gray-400 select-none">
+                <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86
                            a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2
@@ -470,26 +865,26 @@ function agregarFotoAdicional() {
     cont.appendChild(div);
 }
 
-function previewFotoAdicional(event, id) {
+function previewAdic(event, id) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = e => {
-        const img         = document.getElementById('preview_' + id);
-        const placeholder = document.getElementById('placeholder_' + id);
-        const card        = document.getElementById('card_' + id);
+        const img  = document.getElementById('preview_' + id);
+        const ph   = document.getElementById('ph_' + id);
+        const card = document.getElementById('card_' + id);
         img.src = e.target.result;
         img.classList.remove('hidden');
-        placeholder.classList.add('hidden');
+        ph.classList.add('hidden');
         card.classList.add('tiene-foto');
-        imagenesCargadas[id] = e.target.result;
+        imgStore[id] = e.target.result;
     };
     reader.readAsDataURL(file);
 }
 
-function eliminarFotoAdicional(id) {
+function eliminarAdicional(id) {
     document.getElementById('bloque_' + id)?.remove();
-    delete imagenesCargadas[id];
+    delete imgStore[id];
 }
 
 /* ═══════════════════════════════════════════
@@ -508,167 +903,106 @@ function resizeCanvas() {
     signaturePad.clear();
 }
 window.addEventListener('resize', resizeCanvas);
-setTimeout(resizeCanvas, 100);
 
 /* ═══════════════════════════════════════════
-   HELPERS: FECHA, HORA Y NOMBRE DE ARCHIVO
+   HELPERS FECHA
    ═══════════════════════════════════════════ */
-
-/** Formato legible para el PDF: DD/MM/YYYY — HH:MM:SS hrs */
-function formatearFechaHora(date) {
-    const dd   = String(date.getDate()).padStart(2, '0');
-    const mm   = String(date.getMonth() + 1).padStart(2, '0');
+function fechaInspeccion(date) {
+    const dd   = String(date.getDate()).padStart(2,'0');
+    const mm   = String(date.getMonth()+1).padStart(2,'0');
     const yyyy = date.getFullYear();
-    const hh   = String(date.getHours()).padStart(2, '0');
-    const min  = String(date.getMinutes()).padStart(2, '0');
-    const ss   = String(date.getSeconds()).padStart(2, '0');
-    return `${dd}/${mm}/${yyyy}  —  ${hh}:${min}:${ss} hrs`;
+    return `${dd} / ${mm} / ${yyyy}`;
 }
-
-/** Formato para el nombre del archivo: ddmmyyyy */
-function formatearFechaArchivo(date) {
-    const dd   = String(date.getDate()).padStart(2, '0');
-    const mm   = String(date.getMonth() + 1).padStart(2, '0');
+function fechaArchivo(date) {
+    const dd   = String(date.getDate()).padStart(2,'0');
+    const mm   = String(date.getMonth()+1).padStart(2,'0');
     const yyyy = date.getFullYear();
     return `${dd}${mm}${yyyy}`;
 }
-
-/**
- * Sanitiza el nombre del trabajador para usarlo en el nombre de archivo:
- * - Elimina tildes y diacríticos
- * - Reemplaza espacios por guiones bajos
- * - Elimina caracteres especiales
- * Ej: "José María Núñez" → "Jose_Maria_Nunez"
- */
-function sanitizarNombreArchivo(nombre) {
-    return nombre
-        .normalize('NFD')                        // descompone caracteres acentuados
-        .replace(/[\u0300-\u036f]/g, '')         // elimina los diacríticos
-        .replace(/[^a-zA-Z0-9\s]/g, '')          // solo alfanuméricos y espacios
-        .trim()
-        .replace(/\s+/g, '_');                   // espacios → guiones bajos
+function sanitizarNombre(s) {
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+            .replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_');
 }
+function sanitizarPatente(s) { return s.replace(/[^a-zA-Z0-9]/g,'').toUpperCase(); }
 
-/**
- * Sanitiza la patente para el nombre de archivo:
- * Elimina guiones y caracteres no alfanuméricos.
- * Ej: "ABCD-12" → "ABCD12"
- */
-function sanitizarPatente(patente) {
-    return patente.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+/* ═══════════════════════════════════════════
+   CONSTRUIR FILAS DEL CHECKLIST EN EL PDF
+   ═══════════════════════════════════════════ */
+function buildChecklistPDF() {
+    const CHK = (val) => val ? '<span class="check-mark">✓</span>' : '';
+    let html = '';
+    CHECKLIST.forEach(section => {
+        html += `<tr class="cat-row"><td colspan="7">${section.categoria}</td></tr>`;
+        section.items.forEach((item, idx) => {
+            const key = `${section.id}_${idx}`;
+            const s   = chkState[key] || {};
+            html += `
+                <tr>
+                    <td class="col-item" style="font-size:10px;">${item}</td>
+                    <td class="col-check">${CHK(s.existe === 'SI')}</td>
+                    <td class="col-check">${CHK(s.existe === 'NO')}</td>
+                    <td class="col-check">${CHK(s.estado === 'B')}</td>
+                    <td class="col-check">${CHK(s.estado === 'R')}</td>
+                    <td class="col-check">${CHK(s.estado === 'M')}</td>
+                    <td class="col-obs" style="font-size:9.5px;">${s.obs || ''}</td>
+                </tr>`;
+        });
+    });
+    return html;
 }
 
 /* ═══════════════════════════════════════════
-   CONSTRUIR PÁGINA DE FOTO PARA EL PDF
-   Cada foto ocupa una plana completa (A4).
+   CONSTRUIR PÁGINA DE FOTO (plana completa)
    ═══════════════════════════════════════════ */
-function construirPaginaFoto(titulo, subtitulo, imagenBase64) {
-    /*
-     * Cálculo de altura por página:
-     * windowWidth:680px → mapea a 180mm de contenido A4 (con márgenes 15mm c/lado).
-     * Altura de contenido A4: 267mm × (680/180) ≈ 1009px
-     * Usamos 980px para el contenedor total de la "plana" dejando margen de seguridad.
-     * El título ocupa ~48px → imagen disponible: ~920px.
-     */
-    const contenidoFoto = imagenBase64
-        ? `<img src="${imagenBase64}"
-               style="max-width:100%; max-height:100%; object-fit:contain; display:block;">`
-        : `<div style="color:#9ca3af; text-align:center;">
-               <div style="font-size:42px; margin-bottom:10px;">📷</div>
-               <div style="font-size:13px;">Sin Fotografía</div>
-           </div>`;
-
-    const subLabelHtml = subtitulo
-        ? `<div style="font-size:11px; color:#374151; font-weight:normal; margin-top:4px;">${subtitulo}</div>`
-        : '';
-
+function buildPaginaFoto(titulo, subtitulo, base64) {
+    const inner = base64
+        ? `<img src="${base64}" style="max-width:100%; max-height:100%; object-fit:contain;">`
+        : `<div class="pdf-no-photo"><div>📷</div><div style="font-size:13px;">Sin Fotografía</div></div>`;
+    const sub = subtitulo
+        ? `<div class="photo-subtitle">${subtitulo}</div>` : '';
     return `
-        <div style="
-            page-break-before: always;
-            break-before: page;
-            padding-top: 12px;
-            height: 980px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-        ">
-            <!-- Título -->
-            <div style="
-                font-size: 13px;
-                font-weight: bold;
-                background-color: #dbeafe;
-                color: #1e3a8a;
-                padding: 9px 10px;
-                text-align: center;
-                border: 1px solid #93c5fd;
-                margin-bottom: 10px;
-                flex-shrink: 0;
-                text-transform: uppercase;
-            ">
-                ${titulo}
-                ${subLabelHtml}
-            </div>
-
-            <!-- Imagen (ocupa el resto de la plana) -->
-            <div style="
-                flex: 1;
-                border: 1px solid #d1d5db;
-                background: #f9fafb;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                min-height: 0;
-            ">
-                ${contenidoFoto}
-            </div>
-        </div>
-    `;
+        <div class="pdf-full-photo-page">
+            <div class="photo-title">${titulo}${sub}</div>
+            <div class="photo-container">${inner}</div>
+        </div>`;
 }
 
 /* ═══════════════════════════════════════════
    GENERAR PDF
    ═══════════════════════════════════════════ */
 function generarPDF() {
-    const nombre  = document.getElementById('nombre_trabajador').value.trim();
-    const patente = document.getElementById('patente_vehiculo').value.trim();
-    const destino = document.getElementById('destino_viaje').value.trim();
+    // ── Validación ──
+    const idxContrato = document.getElementById('sel-contrato').value;
+    const nombreCond  = document.getElementById('nombre-conductor').value.trim();
+    const licencia    = document.getElementById('licencia-numero').value.trim();
+    const idxVehiculo = document.getElementById('sel-vehiculo').value;
+    const km          = document.getElementById('km-vehiculo').value.trim();
+    const inspector   = document.getElementById('inspector-nombre').value.trim();
 
-    // ── Validación de campos obligatorios ──
-    if (!nombre) {
-        alert('Por favor ingrese el Nombre del Trabajador.');
-        document.getElementById('nombre_trabajador').focus();
-        return;
-    }
-    if (!patente) {
-        alert('Por favor ingrese la Patente del Vehículo.');
-        document.getElementById('patente_vehiculo').focus();
-        return;
-    }
-    if (!destino) {
-        alert('Por favor ingrese el Destino / Motivo de Viaje.');
-        document.getElementById('destino_viaje').focus();
-        return;
-    }
+    if (idxContrato === '')  { alert('Seleccione un Contrato.'); return; }
+    if (!nombreCond)         { alert('Ingrese el Nombre del Conductor.'); return; }
+    if (!licencia)           { alert('Ingrese el N° de Licencia Municipal.'); return; }
+    if (idxVehiculo === '')  { alert('Seleccione la Patente del Vehículo.'); return; }
+    if (!km)                 { alert('Ingrese el Kilometraje del Vehículo.'); return; }
+    if (!inspector)          { alert('Ingrese el nombre del Inspector.'); return; }
 
-    // ── Mostrar loader ──
     document.getElementById('loader').style.display = 'flex';
 
-    // ── Timestamp: se captura en el momento exacto de generar ──
-    const ahora        = new Date();
-    const fechaHoraStr = formatearFechaHora(ahora);
+    const ahora    = new Date();
+    const contrato = DB.contratos[idxContrato];
+    const vehiculo = DB.vehiculos[idxVehiculo];
 
-    // ── Nombre del archivo: Patente_NombreTrabajador_ddmmyyyy.pdf ──
-    const patenteArchivo = sanitizarPatente(patente);
-    const nombreArchivo  = sanitizarNombreArchivo(nombre);
-    const fechaArchivo   = formatearFechaArchivo(ahora);
-    const fileName       = `${patenteArchivo}_${nombreArchivo}_${fechaArchivo}.pdf`;
-
-    // ── Llenar datos en el template PDF ──
-    document.getElementById('pdf-fecha-hora').innerText = fechaHoraStr;
-    document.getElementById('pdf-trabajador').innerText = nombre;
-    document.getElementById('pdf-patente').innerText    = patente;
-    document.getElementById('pdf-destino').innerText    = destino;
+    // ── Llenar datos en la plantilla PDF ──
+    document.getElementById('pdf-codigo').innerText         = contrato.codigo;
+    document.getElementById('pdf-version').innerText        = contrato.version;
+    document.getElementById('pdf-contrato').innerText       = contrato.nombre;
+    document.getElementById('pdf-nombre-conductor').innerText = nombreCond;
+    document.getElementById('pdf-licencia').innerText       = licencia;
+    document.getElementById('pdf-fecha-inspeccion').innerText = fechaInspeccion(ahora);
+    document.getElementById('pdf-patente').innerText        = vehiculo.patente;
+    document.getElementById('pdf-km').innerText             = Number(km).toLocaleString('es-CL') + ' km';
+    document.getElementById('pdf-responsable').innerText    = vehiculo.responsable;
+    document.getElementById('pdf-inspector-nombre').innerText = inspector;
 
     // ── Firma ──
     const firmaImg = document.getElementById('pdf-firma-img');
@@ -678,72 +1012,60 @@ function generarPDF() {
     } else {
         firmaImg.style.display = 'none';
     }
-    document.getElementById('pdf-firma-nombre').innerText = nombre.toUpperCase();
 
-    // ── Construir páginas de fotos fijas ──
-    let paginasHTML = '';
+    // ── Tabla checklist ──
+    document.getElementById('pdf-checklist-tbody').innerHTML = buildChecklistPDF();
+
+    // ── Páginas de fotos ──
+    let fotasHTML = '';
     FOTOS_FIJAS.forEach(cfg => {
-        paginasHTML += construirPaginaFoto(cfg.pdfLabel, null, imagenesCargadas[cfg.id]);
+        fotasHTML += buildPaginaFoto(cfg.pdfLabel, null, imgStore[cfg.id]);
     });
-
-    // ── Construir páginas de fotos adicionales ──
-    const bloquesAdic = document.querySelectorAll('[id^="bloque_adic_"]');
-    bloquesAdic.forEach(bloque => {
+    document.querySelectorAll('[id^="bloque_adic_"]').forEach(bloque => {
         const id   = bloque.id.replace('bloque_', '');
         const desc = document.getElementById('desc_' + id)?.value?.trim() || 'Sin descripción';
-        const img  = imagenesCargadas[id] || '';
-        paginasHTML += construirPaginaFoto('FOTO ADICIONAL', desc, img);
+        fotasHTML += buildPaginaFoto('FOTO ADICIONAL', desc, imgStore[id] || '');
     });
+    document.getElementById('pdf-fotos-container').innerHTML = fotasHTML;
 
-    document.getElementById('pdf-fotos-container').innerHTML = paginasHTML;
+    // ── Nombre del archivo ──
+    const patenteF = sanitizarPatente(vehiculo.patente);
+    const inspF    = sanitizarNombre(inspector);
+    const fechaF   = fechaArchivo(ahora);
+    const fileName = `${patenteF}_${inspF}_${fechaF}.pdf`;
 
-    // ── Posicionar wrapper fuera de pantalla para renderizado ──
+    // ── Renderizar PDF ──
     const scrollActual = window.scrollY;
     window.scrollTo(0, 0);
-
     const wrapper  = document.getElementById('pdf-wrapper');
-    const elemento = document.getElementById('pdf-template');
     wrapper.style.visibility = 'visible';
     wrapper.style.position   = 'absolute';
     wrapper.style.left       = '-9999px';
     wrapper.style.top        = '0';
     wrapper.style.zIndex     = '9999';
 
-    // Esperar 800ms para asegurar render de imágenes y DOM
     setTimeout(() => {
-        const opciones = {
-            margin:      [15, 15, 15, 15],  /* 15mm cada lado → 180mm contenido */
+        html2pdf().set({
+            margin:      [12, 12, 12, 12],
             filename:    fileName,
             image:       { type: 'jpeg', quality: 0.95 },
-            html2canvas: {
-                scale:       2,
-                useCORS:     true,
-                scrollY:     0,
-                windowWidth: 680
-            },
-            pagebreak: { mode: ['css', 'legacy'] },
-            jsPDF:     { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opciones).from(elemento).save()
-            .then(() => {
-                wrapper.style.visibility = 'hidden';
-                window.scrollTo(0, scrollActual);
-                document.getElementById('loader').style.display = 'none';
-            })
-            .catch(err => {
-                console.error('Error generando PDF:', err);
-                wrapper.style.visibility = 'hidden';
-                document.getElementById('loader').style.display = 'none';
-                alert('Ocurrió un error al generar el PDF. Por favor intente nuevamente.');
-            });
-    }, 800);
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0, windowWidth: 681 },
+            pagebreak:   { mode: ['css', 'legacy'] },
+            jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(document.getElementById('pdf-template')).save()
+        .then(() => {
+            wrapper.style.visibility = 'hidden';
+            window.scrollTo(0, scrollActual);
+            document.getElementById('loader').style.display = 'none';
+        })
+        .catch(err => {
+            console.error(err);
+            wrapper.style.visibility = 'hidden';
+            document.getElementById('loader').style.display = 'none';
+            alert('Error al generar el PDF. Intente nuevamente.');
+        });
+    }, 900);
 }
-
-/* ═══════════════════════════════════════════
-   INICIALIZACIÓN
-   ═══════════════════════════════════════════ */
-inicializarFotosFijas();
 
 </script>
 </body>
