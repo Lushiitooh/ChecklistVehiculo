@@ -7,30 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- ═══════════════════════════════════════════════════════════════
-         BASE DE DATOS — DATOS POR DEFECTO
-         Estos datos se usan SOLO si nunca se ha cargado un Excel
-         con el conversor.html. Una vez que el conversor carga un
-         Excel, los datos quedan guardados en el navegador y estos
-         valores de respaldo ya no se utilizan.
-         ═══════════════════════════════════════════════════════════════ -->
-    <script id="datos-db">
-const DB_DEFAULT = {
-    contratos: [
-        {
-            codigo:  "FTO-AL10184-26",
-            nombre:  "Suministro y Mantenimiento del Sistema de Comunicaciones para el Proyecto Línea 7 del Metro de Santiago",
-            version: "V1"
-        }
-    ],
-    vehiculos: [
-        { patente: "ABCD-12", responsable: "Juan Pérez González" },
-        { patente: "EFGH-34", responsable: "María Silva Rojas" },
-        { patente: "IJKL-56", responsable: "Carlos Muñoz Vera" }
-    ]
-};
-    </script>
-    <!-- ═══ FIN BASE DE DATOS ═══ -->
+    <!-- Los datos se cargan desde datos.json al iniciar la página -->
 
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #f0f4f8; }
@@ -181,7 +158,9 @@ const DB_DEFAULT = {
 </div>
 
 <!-- ══ BANNER ESTADO BD ══ -->
-<div id="banner-db" class="hidden sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center transition-all"></div>
+<div id="banner-db" class="sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center transition-all bg-blue-700 text-white">
+    Cargando datos...
+</div>
 
 <!-- ══ HEADER ══ -->
 <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
@@ -578,44 +557,45 @@ FOTOS_FIJAS.forEach(f => { imgStore[f.id] = ''; });
 let contAdic = 0;
 
 /* ═══════════════════════════════════════════
-   BASE DE DATOS ACTIVA (se resuelve al inicio)
-   Prioridad: 1) localStorage  2) DB_DEFAULT
+   BASE DE DATOS ACTIVA
+   Se descarga desde datos.json en el servidor.
+   Si falla (ej: prueba local sin servidor),
+   usa los datos mínimos de respaldo.
    ═══════════════════════════════════════════ */
-let DB;
-const STORAGE_KEY = 'sice_checklist_db';
+let DB = null;
 
-function cargarDB() {
+async function cargarDB() {
     const banner = document.getElementById('banner-db');
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            DB = parsed;
-            // Mostrar banner verde con fecha de última actualización
-            const fecha = parsed.actualizadoEl
-                ? new Date(parsed.actualizadoEl).toLocaleDateString('es-CL', {
-                    day:'2-digit', month:'2-digit', year:'numeric',
-                    hour:'2-digit', minute:'2-digit' })
-                : '—';
-            banner.className = 'sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center bg-green-600 text-white';
-            banner.textContent = `✅ Base de datos cargada desde conversor  ·  Última actualización: ${fecha}`;
-            banner.classList.remove('hidden');
-            return;
-        }
-    } catch (e) { /* si falla, cae al default */ }
+        const resp = await fetch('./datos.json');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        DB = await resp.json();
 
-    // Usar datos por defecto
-    DB = DB_DEFAULT;
-    banner.className = 'sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center bg-amber-500 text-white';
-    banner.textContent = '⚠️ Usando datos de ejemplo. Cargue su Excel con conversor.html para actualizar.';
-    banner.classList.remove('hidden');
+        const fecha = DB.actualizadoEl
+            ? new Date(DB.actualizadoEl).toLocaleDateString('es-CL', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+              })
+            : '—';
+        banner.className = 'sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center bg-green-700 text-white';
+        banner.textContent = `✅ Datos actualizados al ${fecha}`;
+
+    } catch (e) {
+        // Fallback mínimo para pruebas locales (file://)
+        DB = {
+            contratos: [{ codigo: '—', nombre: 'Sin datos — suba datos.json a GitHub', version: '—' }],
+            vehiculos: [{ patente: '——', responsable: 'Sin datos — suba datos.json a GitHub' }]
+        };
+        banner.className = 'sticky top-[64px] z-20 px-4 py-2 text-xs font-semibold text-center bg-red-600 text-white';
+        banner.textContent = '⚠️ No se pudo cargar datos.json. ¿Está publicado en GitHub Pages?';
+    }
 }
 
 /* ═══════════════════════════════════════════
    INICIALIZACIÓN
    ═══════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-    cargarDB();
+document.addEventListener('DOMContentLoaded', async () => {
+    await cargarDB();       // ← espera que datos.json cargue antes de todo
     poblarContratos();
     poblarVehiculos();
     buildChecklist();

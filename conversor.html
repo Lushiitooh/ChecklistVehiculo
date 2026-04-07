@@ -3,153 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conversor Excel → datos.js | ChecklistVehiculo</title>
+    <title>Actualizar Base de Datos | ChecklistVehiculo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS para leer Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        pre {
-            background: #1e293b; color: #e2e8f0;
-            padding: 16px; border-radius: 8px;
-            font-size: 12px; overflow-x: auto;
-            max-height: 400px; overflow-y: auto;
-        }
-    </style>
 </head>
-<body class="bg-gray-100 min-h-screen py-10 px-4">
-
+<body class="bg-gray-100 min-h-screen py-10 px-4 font-sans">
 <div class="max-w-2xl mx-auto space-y-6">
 
-    <!-- Título -->
+    <!-- ── Título ── -->
     <div class="bg-blue-900 text-white rounded-xl p-5">
-        <h1 class="text-xl font-bold">Conversor Excel → datos.js</h1>
+        <h1 class="text-xl font-bold">Actualizar Base de Datos</h1>
         <p class="text-blue-300 text-sm mt-1">ChecklistVehiculo · SICE Agencia Chile S.A.</p>
     </div>
 
-    <!-- Instrucciones del Excel -->
+    <!-- ── Cómo funciona ── -->
     <div class="bg-white rounded-xl shadow p-5 space-y-3">
-        <h2 class="font-bold text-gray-700 text-base">📋 Formato requerido del Excel</h2>
-        <p class="text-sm text-gray-600">
-            Su archivo Excel debe tener <strong>exactamente 2 hojas</strong> con los siguientes nombres y columnas:
+        <h2 class="font-bold text-gray-700">¿Cómo funciona?</h2>
+        <ol class="text-sm text-gray-600 list-decimal ml-5 space-y-2">
+            <li>Cargue su archivo Excel en esta página.</li>
+            <li>Descargue el archivo <strong>datos.json</strong> que se genera.</li>
+            <li>Suba ese <strong>datos.json</strong> al repositorio de GitHub
+                (reemplazando el anterior).</li>
+            <li>¡Listo! Todos los técnicos verán los datos actualizados
+                al abrir la página.</li>
+        </ol>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+            💡 <strong>No necesita saber programar.</strong> En GitHub puede arrastrar
+            y soltar el archivo directamente en el navegador.
+        </div>
+    </div>
+
+    <!-- ── Formato Excel ── -->
+    <div class="bg-white rounded-xl shadow p-5 space-y-3">
+        <h2 class="font-bold text-gray-700">Formato requerido del Excel</h2>
+        <p class="text-sm text-gray-500">
+            El archivo debe tener <strong>exactamente 2 hojas</strong> con estos nombres:
         </p>
 
-        <div class="space-y-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <!-- Contratos -->
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <p class="text-xs font-bold text-blue-800 mb-2">HOJA 1 — Nombre: <code class="bg-blue-100 px-1 rounded">Contratos</code></p>
+                <p class="text-xs font-bold text-blue-800 mb-2">
+                    Hoja 1 — <code class="bg-blue-100 px-1 rounded">Contratos</code>
+                </p>
                 <table class="text-xs w-full border-collapse">
                     <thead>
-                        <tr class="bg-gray-200">
-                            <th class="border border-gray-300 px-2 py-1 text-left">Columna A</th>
-                            <th class="border border-gray-300 px-2 py-1 text-left">Columna B</th>
-                            <th class="border border-gray-300 px-2 py-1 text-left">Columna C</th>
+                        <tr class="bg-gray-200 text-gray-700">
+                            <th class="border border-gray-300 px-2 py-1 text-left">Col A</th>
+                            <th class="border border-gray-300 px-2 py-1 text-left">Col B</th>
+                            <th class="border border-gray-300 px-2 py-1 text-left">Col C</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="bg-blue-50 font-semibold">
+                        <tr class="bg-yellow-50 font-semibold text-gray-600">
                             <td class="border border-gray-300 px-2 py-1">Codigo</td>
                             <td class="border border-gray-300 px-2 py-1">Nombre</td>
                             <td class="border border-gray-300 px-2 py-1">Version</td>
                         </tr>
                         <tr class="text-gray-500">
-                            <td class="border border-gray-300 px-2 py-1">FTO-AL10184-26</td>
-                            <td class="border border-gray-300 px-2 py-1">Suministro Sistema Comunicaciones L7...</td>
+                            <td class="border border-gray-300 px-2 py-1 font-mono">FTO-AL10184-26</td>
+                            <td class="border border-gray-300 px-2 py-1">Suministro...</td>
                             <td class="border border-gray-300 px-2 py-1">V1</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
+            <!-- Vehículos -->
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <p class="text-xs font-bold text-blue-800 mb-2">HOJA 2 — Nombre: <code class="bg-blue-100 px-1 rounded">Vehiculos</code></p>
+                <p class="text-xs font-bold text-blue-800 mb-2">
+                    Hoja 2 — <code class="bg-blue-100 px-1 rounded">Vehiculos</code>
+                </p>
                 <table class="text-xs w-full border-collapse">
                     <thead>
-                        <tr class="bg-gray-200">
-                            <th class="border border-gray-300 px-2 py-1 text-left">Columna A</th>
-                            <th class="border border-gray-300 px-2 py-1 text-left">Columna B</th>
+                        <tr class="bg-gray-200 text-gray-700">
+                            <th class="border border-gray-300 px-2 py-1 text-left">Col A</th>
+                            <th class="border border-gray-300 px-2 py-1 text-left">Col B</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="bg-blue-50 font-semibold">
+                        <tr class="bg-yellow-50 font-semibold text-gray-600">
                             <td class="border border-gray-300 px-2 py-1">Patente</td>
                             <td class="border border-gray-300 px-2 py-1">Responsable</td>
                         </tr>
                         <tr class="text-gray-500">
-                            <td class="border border-gray-300 px-2 py-1">ABCD-12</td>
-                            <td class="border border-gray-300 px-2 py-1">Juan Pérez González</td>
+                            <td class="border border-gray-300 px-2 py-1 font-bold">ABCD-12</td>
+                            <td class="border border-gray-300 px-2 py-1">Juan Pérez</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-        <p class="text-xs text-gray-500">⚠️ La primera fila de cada hoja es el encabezado (no se importa como dato).</p>
+        <p class="text-xs text-red-600 font-medium">
+            ⚠️ Las hojas deben llamarse exactamente <code>Contratos</code> y
+            <code>Vehiculos</code> (sin tilde en Vehículos).
+            La fila 1 de cada hoja es el encabezado y no se importa.
+        </p>
     </div>
 
-    <!-- Cargar Excel -->
+    <!-- ── Cargar Excel ── -->
     <div class="bg-white rounded-xl shadow p-5">
-        <h2 class="font-bold text-gray-700 text-base mb-4">📂 Cargar archivo Excel</h2>
-        <label class="block w-full cursor-pointer">
-            <div class="border-2 border-dashed border-blue-400 rounded-xl p-6 text-center hover:bg-blue-50 transition">
-                <svg class="w-10 h-10 text-blue-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <h2 class="font-bold text-gray-700 mb-4">Cargar archivo Excel</h2>
+        <label class="block cursor-pointer">
+            <div id="drop-zone"
+                class="border-2 border-dashed border-blue-400 rounded-xl p-8 text-center
+                       hover:bg-blue-50 transition-colors">
+                <svg class="w-12 h-12 text-blue-400 mx-auto mb-3" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+                        d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0
+                           01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
                 </svg>
-                <p class="text-sm font-semibold text-blue-600">Haga clic para seleccionar el Excel</p>
+                <p class="text-sm font-semibold text-blue-700">
+                    Haga clic para seleccionar el Excel
+                </p>
                 <p class="text-xs text-gray-400 mt-1">Archivos .xlsx o .xls</p>
             </div>
-            <input type="file" id="excel-input" accept=".xlsx,.xls" class="hidden" onchange="procesarExcel(event)">
+            <input type="file" id="excel-input" accept=".xlsx,.xls"
+                class="hidden" onchange="procesarExcel(event)">
         </label>
     </div>
 
-    <!-- Resultado -->
-    <div id="resultado-section" class="hidden bg-white rounded-xl shadow p-5 space-y-4">
-
-        <!-- ✅ Éxito guardado automáticamente -->
-        <div class="bg-green-50 border border-green-300 rounded-xl p-4 flex items-start gap-3">
-            <span class="text-2xl flex-shrink-0">✅</span>
-            <div>
-                <p class="font-bold text-green-800 text-sm">¡Datos guardados automáticamente!</p>
-                <p class="text-xs text-green-700 mt-1">
-                    Los datos ya están disponibles en este navegador.<br>
-                    La próxima vez que abra <strong>index.html</strong> en este mismo navegador,
-                    los cargará automáticamente sin hacer nada más.
-                </p>
-            </div>
-        </div>
-
-        <!-- Resumen -->
-        <div id="resumen" class="flex gap-3 flex-wrap"></div>
-
-        <!-- Detalles importados -->
-        <div>
-            <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Datos importados:</p>
-            <div id="tabla-contratos" class="mb-3"></div>
-            <div id="tabla-vehiculos"></div>
-        </div>
-
-        <!-- Nota: uso en otro dispositivo -->
-        <details class="bg-gray-50 border border-gray-200 rounded-lg">
-            <summary class="px-4 py-3 text-xs font-semibold text-gray-600 cursor-pointer select-none">
-                ¿Necesita usar esto en otro dispositivo o navegador?
-            </summary>
-            <div class="px-4 pb-4 pt-2 text-xs text-gray-600 space-y-2">
-                <p>Los datos se guardan solo en <strong>este navegador</strong>. Para usarlos en otro dispositivo:</p>
-                <ol class="list-decimal ml-4 space-y-1">
-                    <li>Copie el archivo <code>conversor.html</code> a ese dispositivo (o abra el mismo Excel allá).</li>
-                    <li>Cargue el Excel en el conversor de ese dispositivo.</li>
-                </ol>
-                <p class="text-gray-400">O bien, use siempre el mismo dispositivo para las inspecciones.</p>
-            </div>
-        </details>
+    <!-- ── Error ── -->
+    <div id="error-section"
+        class="hidden bg-red-50 border border-red-300 rounded-xl p-4 text-sm text-red-700 font-medium">
     </div>
 
-    <!-- Error -->
-    <div id="error-section" class="hidden bg-red-50 border border-red-300 rounded-xl p-4 text-sm text-red-700"></div>
+    <!-- ── Resultado ── -->
+    <div id="resultado-section" class="hidden space-y-4">
+
+        <!-- Éxito + Descarga -->
+        <div class="bg-white rounded-xl shadow p-5 space-y-4">
+            <div class="flex items-center gap-3 bg-green-50 border border-green-300 rounded-xl p-4">
+                <span class="text-3xl">✅</span>
+                <div>
+                    <p class="font-bold text-green-800">¡Excel procesado correctamente!</p>
+                    <p class="text-xs text-green-700 mt-0.5">
+                        Descargue el archivo <strong>datos.json</strong> y súbalo a GitHub.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Resumen -->
+            <div id="resumen" class="flex gap-3 flex-wrap"></div>
+
+            <!-- Botón principal -->
+            <button onclick="descargarJSON()"
+                class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-4 rounded-xl
+                       text-base flex items-center justify-center gap-2 transition active:scale-95">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Descargar datos.json
+            </button>
+        </div>
+
+        <!-- Vista previa de los datos -->
+        <div class="bg-white rounded-xl shadow p-5 space-y-3">
+            <h3 class="font-bold text-gray-700 text-sm">Vista previa de los datos importados</h3>
+            <div id="tabla-contratos"></div>
+            <div id="tabla-vehiculos" class="mt-3"></div>
+        </div>
+
+        <!-- Paso a paso GitHub -->
+        <div class="bg-white rounded-xl shadow p-5">
+            <h3 class="font-bold text-gray-700 mb-3">¿Cómo subir datos.json a GitHub?</h3>
+            <ol class="text-sm text-gray-600 space-y-3">
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-6 h-6 bg-blue-800 text-white rounded-full
+                                 text-xs font-bold flex items-center justify-center">1</span>
+                    <span>Abra su repositorio en <strong>github.com</strong> en el navegador.</span>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-6 h-6 bg-blue-800 text-white rounded-full
+                                 text-xs font-bold flex items-center justify-center">2</span>
+                    <span>Navegue a la carpeta <code class="bg-gray-100 px-1 rounded">ChecklistVehiculo/</code>.</span>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-6 h-6 bg-blue-800 text-white rounded-full
+                                 text-xs font-bold flex items-center justify-center">3</span>
+                    <span>Haga clic en <strong>"Add file" → "Upload files"</strong>.</span>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-6 h-6 bg-blue-800 text-white rounded-full
+                                 text-xs font-bold flex items-center justify-center">4</span>
+                    <span>Arrastre el archivo <strong>datos.json</strong> descargado y
+                        haga clic en <strong>"Commit changes"</strong>.</span>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full
+                                 text-xs font-bold flex items-center justify-center">✓</span>
+                    <span>¡Listo! En unos segundos todos los técnicos verán los datos actualizados.</span>
+                </li>
+            </ol>
+        </div>
+    </div>
 
 </div>
 
 <script>
-let contenidoJS = '';
+const STORAGE_KEY = 'sice_checklist_db';
+let datosGenerados = null;
 
 function procesarExcel(event) {
     const file = event.target.files[0];
@@ -158,79 +213,83 @@ function procesarExcel(event) {
     document.getElementById('error-section').classList.add('hidden');
     document.getElementById('resultado-section').classList.add('hidden');
 
+    // Actualizar UI del drop zone
+    document.getElementById('drop-zone').innerHTML = `
+        <div class="text-blue-700 font-semibold text-sm">📂 ${file.name}</div>
+        <div class="text-xs text-gray-400 mt-1">Procesando...</div>
+    `;
+
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
             const wb = XLSX.read(e.target.result, { type: 'array' });
 
-            // ── Verificar hojas ──
             const sheetContratos = wb.Sheets['Contratos'];
             const sheetVehiculos = wb.Sheets['Vehiculos'];
 
-            if (!sheetContratos) throw new Error("No se encontró la hoja 'Contratos'. Verifique el nombre exacto.");
-            if (!sheetVehiculos) throw new Error("No se encontró la hoja 'Vehiculos'. Verifique el nombre exacto.");
+            if (!sheetContratos) throw new Error(
+                "No se encontró la hoja 'Contratos'. Verifique el nombre exacto (sin tilde).");
+            if (!sheetVehiculos) throw new Error(
+                "No se encontró la hoja 'Vehiculos'. Verifique el nombre exacto (sin tilde).");
 
-            // ── Leer datos ──
-            const rawContratos = XLSX.utils.sheet_to_json(sheetContratos, { header: 1 });
-            const rawVehiculos = XLSX.utils.sheet_to_json(sheetVehiculos, { header: 1 });
+            const rawC = XLSX.utils.sheet_to_json(sheetContratos, { header: 1 });
+            const rawV = XLSX.utils.sheet_to_json(sheetVehiculos, { header: 1 });
 
-            // Saltar primera fila (encabezados)
-            const contratos = rawContratos.slice(1).filter(r => r[0] || r[1]).map(r => ({
+            const contratos = rawC.slice(1).filter(r => r[0] || r[1]).map(r => ({
                 codigo:  String(r[0] || '').trim(),
                 nombre:  String(r[1] || '').trim(),
                 version: String(r[2] || '').trim()
             }));
-
-            const vehiculos = rawVehiculos.slice(1).filter(r => r[0] || r[1]).map(r => ({
+            const vehiculos = rawV.slice(1).filter(r => r[0] || r[1]).map(r => ({
                 patente:     String(r[0] || '').trim().toUpperCase(),
                 responsable: String(r[1] || '').trim()
             }));
 
-            if (contratos.length === 0) throw new Error("La hoja 'Contratos' no tiene datos (solo encabezado).");
-            if (vehiculos.length === 0) throw new Error("La hoja 'Vehiculos' no tiene datos (solo encabezado).");
+            if (contratos.length === 0)
+                throw new Error("La hoja 'Contratos' está vacía o solo tiene encabezado.");
+            if (vehiculos.length === 0)
+                throw new Error("La hoja 'Vehiculos' está vacía o solo tiene encabezado.");
 
-            // ── Guardar en localStorage automáticamente ──
-            const payload = {
+            datosGenerados = {
+                actualizadoEl: new Date().toISOString(),
                 contratos,
-                vehiculos,
-                actualizadoEl: new Date().toISOString()
+                vehiculos
             };
-            localStorage.setItem('sice_checklist_db', JSON.stringify(payload));
 
-            // ── Resumen ──
+            // Resumen
             document.getElementById('resumen').innerHTML = `
-                <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
-                    📄 ${contratos.length} contrato(s) importado(s)
+                <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1.5 rounded-full">
+                    📄 ${contratos.length} contrato(s)
                 </span>
-                <span class="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
-                    🚗 ${vehiculos.length} vehículo(s) importado(s)
+                <span class="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1.5 rounded-full">
+                    🚗 ${vehiculos.length} vehículo(s)
                 </span>
             `;
 
-            // ── Tabla contratos ──
+            // Tabla contratos
             document.getElementById('tabla-contratos').innerHTML = `
-                <p class="text-xs font-bold text-gray-600 mb-1">Contratos:</p>
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Contratos</p>
                 <table class="w-full text-xs border-collapse">
                     <thead><tr class="bg-gray-100">
-                        <th class="border border-gray-300 px-2 py-1 text-left">Código</th>
+                        <th class="border border-gray-300 px-2 py-1 text-left w-1/4">Código</th>
                         <th class="border border-gray-300 px-2 py-1 text-left">Nombre</th>
-                        <th class="border border-gray-300 px-2 py-1 text-left">Ver.</th>
+                        <th class="border border-gray-300 px-2 py-1 text-center w-12">Ver.</th>
                     </tr></thead>
                     <tbody>${contratos.map(c => `
                         <tr>
-                            <td class="border border-gray-300 px-2 py-1 font-mono">${c.codigo}</td>
+                            <td class="border border-gray-300 px-2 py-1 font-mono text-xs">${c.codigo}</td>
                             <td class="border border-gray-300 px-2 py-1">${c.nombre}</td>
                             <td class="border border-gray-300 px-2 py-1 text-center">${c.version}</td>
                         </tr>`).join('')}
                     </tbody>
                 </table>`;
 
-            // ── Tabla vehículos ──
+            // Tabla vehículos
             document.getElementById('tabla-vehiculos').innerHTML = `
-                <p class="text-xs font-bold text-gray-600 mb-1 mt-3">Vehículos:</p>
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Vehículos</p>
                 <table class="w-full text-xs border-collapse">
                     <thead><tr class="bg-gray-100">
-                        <th class="border border-gray-300 px-2 py-1 text-left">Patente</th>
+                        <th class="border border-gray-300 px-2 py-1 text-left w-1/3">Patente</th>
                         <th class="border border-gray-300 px-2 py-1 text-left">A cargo de</th>
                     </tr></thead>
                     <tbody>${vehiculos.map(v => `
@@ -242,56 +301,36 @@ function procesarExcel(event) {
                 </table>`;
 
             document.getElementById('resultado-section').classList.remove('hidden');
-            document.getElementById('resultado-section').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('resultado-section')
+                .scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         } catch (err) {
-            const errDiv = document.getElementById('error-section');
-            errDiv.textContent = '⚠️ ' + err.message;
-            errDiv.classList.remove('hidden');
+            document.getElementById('error-section').textContent = '⚠️ ' + err.message;
+            document.getElementById('error-section').classList.remove('hidden');
+            // Reset drop zone
+            document.getElementById('drop-zone').innerHTML = `
+                <p class="text-sm font-semibold text-red-600">Error al leer el archivo.</p>
+                <p class="text-xs text-gray-400 mt-1">Haga clic para intentar de nuevo.</p>`;
         }
     };
     reader.readAsArrayBuffer(file);
 }
 
-function generarDatosJS(contratos, vehiculos) {
-    const fmtContratos = contratos.map(c =>
-        `        {\n` +
-        `            codigo:  ${JSON.stringify(c.codigo)},\n` +
-        `            nombre:  ${JSON.stringify(c.nombre)},\n` +
-        `            version: ${JSON.stringify(c.version)}\n` +
-        `        }`
-    ).join(',\n');
-
-    const fmtVehiculos = vehiculos.map(v =>
-        `        { patente: ${JSON.stringify(v.patente)}, responsable: ${JSON.stringify(v.responsable)} }`
-    ).join(',\n');
-
-    const now = new Date();
-    const fecha = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-
-    // Genera el bloque exacto que se pega en index.html
-    return `    <script id="datos-db">
-/* Actualizado: ${fecha} */
-/* ── CONTRATOS: codigo, nombre, version */
-/* ── VEHÍCULOS: patente, responsable    */
-const DB = {
-    contratos: [
-${fmtContratos}
-    ],
-    vehiculos: [
-${fmtVehiculos}
-    ]
-};
-    <\/script>
-    <!-- ═══ FIN BASE DE DATOS ═══ -->`;
+function descargarJSON() {
+    if (!datosGenerados) return;
+    const blob = new Blob(
+        [JSON.stringify(datosGenerados, null, 4)],
+        { type: 'application/json; charset=utf-8' }
+    );
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = 'datos.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
-
-function copiarContenido() {
-    navigator.clipboard.writeText(contenidoJS)
-        .then(() => alert('¡Copiado al portapapeles!'))
-        .catch(() => alert('No se pudo copiar. Use el botón "Descargar datos.js".'));
-}
-
 </script>
 </body>
 </html>

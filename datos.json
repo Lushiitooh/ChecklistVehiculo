@@ -1,0 +1,15 @@
+{
+    "actualizadoEl": "2026-04-07T00:00:00.000Z",
+    "contratos": [
+        {
+            "codigo": "FTO-AL10184-26",
+            "nombre": "Suministro y Mantenimiento del Sistema de Comunicaciones para el Proyecto Línea 7 del Metro de Santiago",
+            "version": "V1"
+        }
+    ],
+    "vehiculos": [
+        { "patente": "ABCD-12", "responsable": "Juan Pérez González" },
+        { "patente": "EFGH-34", "responsable": "María Silva Rojas" },
+        { "patente": "IJKL-56", "responsable": "Carlos Muñoz Vera" }
+    ]
+}
